@@ -289,3 +289,23 @@ p {
 .auth-link a:hover {
   text-decoration: underline;
 }
+
+/* Error Message */
+.auth-error {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* Button */
+.auth-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
