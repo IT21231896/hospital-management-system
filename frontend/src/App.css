@@ -1,0 +1,11 @@
+/* App.css */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Add padding to the main content to avoid overlap with the header */
+.main-content {
+  padding: 20px;
+  margin-top: 60px; /* Adjust based on header height */
+}

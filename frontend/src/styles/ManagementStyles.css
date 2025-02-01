@@ -1,0 +1,220 @@
+/* ManagementStyles.css */
+
+/* General Container */
+.management-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb); /* Soft gradient background */
+    min-height: 100vh;
+    font-family: 'Roboto', sans-serif; /* More modern typography */
+  }
+  
+  /* Header */
+  .management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  
+  /* Search Bar */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    padding: 10px 15px;
+    border-radius: 50px; /* Rounded corners */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    flex-grow: 1;
+    max-width: 400px;
+  }
+  
+  .search-bar input {
+    border: none;
+    margin-left: 8px;
+    width: 100%;
+    outline: none;
+    font-size: 16px;
+  }
+  
+  /* Add Button */
+  .add-btn {
+    background: #3498db; /* Primary color */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px; /* Rounded corners */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2); /* Shadow effect */
+    transition: background 0.3s ease, transform 0.3s ease;
+  }
+  
+  .add-btn:hover {
+    background: #2980b9; /* Darker blue on hover */
+    transform: translateY(-2px); /* Subtle lift effect */
+  }
+  
+  /* Table */
+  .management-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  }
+  
+  .management-table th,
+  .management-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 16px;
+  }
+  
+  .management-table th {
+    background: #3498db; /* Header background color */
+    color: white;
+  }
+  
+  .management-table tr:hover {
+    background: #f7f9fc; /* Hover effect for rows */
+  }
+  
+  /* Edit and Delete Buttons */
+  .edit-btn, .delete-btn {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 0 6px;
+    transition: background 0.3s ease;
+  }
+  
+  .edit-btn {
+    background: #f1c40f;
+    color: white;
+  }
+  
+  .edit-btn:hover {
+    background: #f39c12; /* Darker yellow */
+  }
+  
+  .delete-btn {
+    background: #e74c3c;
+    color: white;
+  }
+  
+  .delete-btn:hover {
+    background: #c0392b; /* Darker red */
+  }
+  
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .modal {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 450px;
+    max-width: 90%;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .modal h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #333;
+  }
+  
+  /* Modal Form Inputs */
+  .modal input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background: #f9f9f9;
+    transition: border 0.3s ease, background 0.3s ease;
+  }
+  
+  .modal input:focus {
+    border-color: #3498db; /* Focus color */
+    background: #ffffff;
+  }
+  
+  /* Modal Actions */
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .modal-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+  }
+  
+  .modal-actions button:last-child {
+    background: #3498db;
+    color: white;
+  }
+  
+  .modal-actions button:last-child:hover {
+    background: #2980b9; /* Hover effect for 'Save' button */
+  }
+  
+  /* Cancel Button */
+  .modal-actions button[type="button"] {
+    background: #e5e7eb;
+    color: #333;
+  }
+  
+  .modal-actions button[type="button"]:hover {
+    background: #d1d5db;
+  }
+  
+  /* Responsive Styling */
+  @media (max-width: 768px) {
+    .management-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .add-btn {
+      width: 100%;
+      margin-top: 10px;
+    }
+  
+    .search-bar {
+      max-width: 100%;
+      margin-top: 10px;
+    }
+  
+    .modal {
+      width: 100%;
+      max-width: 400px;
+    }
+  }
+  
