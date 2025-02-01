@@ -1,26 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { FiSearch, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 import "../styles/ManagementStyles.css";
 
 const DoctorManagement = () => {
-  const [doctors, setDoctors] = useState([
-    { id: 1, name: "Dr. Alice Brown", specialization: "Cardiology", contact: "alice@example.com", availability: "Mon-Fri" },
-    { id: 2, name: "Dr. Bob Green", specialization: "Neurology", contact: "bob@example.com", availability: "Mon-Wed" }
-  ]);
+  const [doctors, setDoctors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentDoctor, setCurrentDoctor] = useState(null);
 
-  // CRUD Operations
+  // Fetch doctors from API
+  useEffect(() => {
+    axios.get(`${API_BASE_URL}/doctors`)
+      .then(response => setDoctors(response.data))
+      .catch(error => console.error("Error fetching doctors:", error));
+  }, []);
+
+  // Handle delete operation
   const handleDelete = (id) => {
-    setDoctors(doctors.filter(doctor => doctor.id !== id));
+    axios.delete(`${API_BASE_URL}/doctors/${id}`)
+      .then(() => setDoctors(doctors.filter(doctor => doctor._id !== id)))
+      .catch(error => console.error("Error deleting doctor:", error));
   };
 
+  // Handle form submit for add/edit
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newDoctor = {
-      id: currentDoctor ? currentDoctor.id : Date.now(),
       name: formData.get("name"),
       specialization: formData.get("specialization"),
       contact: formData.get("contact"),
@@ -28,22 +37,28 @@ const DoctorManagement = () => {
     };
 
     if (currentDoctor) {
-      setDoctors(doctors.map(d => d.id === currentDoctor.id ? newDoctor : d));
+      axios.put(`${API_BASE_URL}/doctors/${currentDoctor._id}`, newDoctor)
+        .then(response => {
+          setDoctors(doctors.map(d => d._id === currentDoctor._id ? response.data : d));
+        })
+        .catch(error => console.error("Error updating doctor:", error));
     } else {
-      setDoctors([...doctors, newDoctor]);
+      axios.post(`${API_BASE_URL}/doctors`, newDoctor)
+        .then(response => setDoctors([...doctors, response.data]))
+        .catch(error => console.error("Error adding doctor:", error));
     }
+
     setIsModalOpen(false);
     setCurrentDoctor(null);
   };
 
-  // Filter doctors based on search
+  // Filter doctors based on search input
   const filteredDoctors = doctors.filter(doctor =>
     doctor.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="management-container">
-      {/* Header and Search */}
       <div className="management-header">
         <h1>Doctor Management</h1>
         <div className="search-bar">
@@ -60,7 +75,6 @@ const DoctorManagement = () => {
         </button>
       </div>
 
-      {/* Doctor Table */}
       <table className="management-table">
         <thead>
           <tr>
@@ -73,7 +87,7 @@ const DoctorManagement = () => {
         </thead>
         <tbody>
           {filteredDoctors.map(doctor => (
-            <tr key={doctor.id}>
+            <tr key={doctor._id}>
               <td>{doctor.name}</td>
               <td>{doctor.specialization}</td>
               <td>{doctor.contact}</td>
@@ -88,10 +102,7 @@ const DoctorManagement = () => {
                 >
                   <FiEdit />
                 </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(doctor.id)}
-                >
+                <button className="delete-btn" onClick={() => handleDelete(doctor._id)}>
                   <FiTrash2 />
                 </button>
               </td>
@@ -100,7 +111,6 @@ const DoctorManagement = () => {
         </tbody>
       </table>
 
-      {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
