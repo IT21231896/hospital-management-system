@@ -1,50 +1,89 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { FiSearch, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import Swal from "sweetalert2";
 import "../styles/ManagementStyles.css";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const LabManagement = () => {
-  const [labTests, setLabTests] = useState([
-    { id: 1, testName: "Blood Test", patientName: "John Doe", testDate: "2023-10-15", status: "Completed" },
-    { id: 2, testName: "X-Ray", patientName: "Jane Smith", testDate: "2023-10-16", status: "Pending" }
-  ]);
+  const [labTests, setLabTests] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTest, setCurrentTest] = useState(null);
 
-  // CRUD Operations
-  const handleDelete = (id) => {
-    setLabTests(labTests.filter(test => test.id !== id));
+  useEffect(() => {
+    fetchLabTests();
+  }, []);
+
+  // Fetch lab tests from API
+  const fetchLabTests = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/lab`);
+      setLabTests(response.data);
+    } catch (error) {
+      console.error("Error fetching lab tests:", error);
+    }
   };
 
-  const handleSubmit = (e) => {
+  // Handle delete
+  const handleDelete = async (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This test will be permanently deleted!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`${API_BASE_URL}/lab/${id}`);
+          setLabTests(labTests.filter((test) => test._id !== id));
+          Swal.fire("Deleted!", "Lab test has been deleted.", "success");
+        } catch (error) {
+          Swal.fire("Error!", "Failed to delete the lab test.", "error");
+        }
+      }
+    });
+  };
+
+  // Handle submit (add/edit test)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newTest = {
-      id: currentTest ? currentTest.id : Date.now(),
       testName: formData.get("testName"),
       patientName: formData.get("patientName"),
       testDate: formData.get("testDate"),
-      status: formData.get("status")
+      status: formData.get("status"),
     };
 
-    if (currentTest) {
-      setLabTests(labTests.map(t => t.id === currentTest.id ? newTest : t));
-    } else {
-      setLabTests([...labTests, newTest]);
+    try {
+      if (currentTest) {
+        await axios.put(`${API_BASE_URL}/lab/${currentTest._id}`, newTest);
+        setLabTests(labTests.map((t) => (t.id === currentTest._id ? newTest : t)));
+        await fetchLabTests(); 
+        Swal.fire("Updated!", "Lab test has been updated.", "success");
+      } else {
+        const response = await axios.post(`${API_BASE_URL}/lab`, newTest);
+        setLabTests([...labTests, response.data]);
+        Swal.fire("Added!", "New lab test has been added.", "success");
+      }
+      setIsModalOpen(false);
+      setCurrentTest(null);
+    } catch (error) {
+      Swal.fire("Error!", "Failed to save lab test.", "error");
     }
-    setIsModalOpen(false);
-    setCurrentTest(null);
   };
 
-  // Filter lab tests based on search
-  const filteredLabTests = labTests.filter(test =>
-    test.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    test.patientName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLabTests = labTests.filter(
+    (test) =>
+      test.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      test.patientName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="management-container">
-      {/* Header and Search */}
       <div className="management-header">
         <h1>Lab Management</h1>
         <div className="search-bar">
@@ -61,7 +100,6 @@ const LabManagement = () => {
         </button>
       </div>
 
-      {/* Lab Tests Table */}
       <table className="management-table">
         <thead>
           <tr>
@@ -73,11 +111,11 @@ const LabManagement = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredLabTests.map(test => (
-            <tr key={test.id}>
+          {filteredLabTests.map((test) => (
+            <tr key={test._id}>
               <td>{test.testName}</td>
               <td>{test.patientName}</td>
-              <td>{test.testDate}</td>
+              <td>{new Date(test.testDate).toLocaleDateString("en-CA")}</td>
               <td>{test.status}</td>
               <td>
                 <button
@@ -89,10 +127,7 @@ const LabManagement = () => {
                 >
                   <FiEdit />
                 </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(test.id)}
-                >
+                <button className="delete-btn" onClick={() => handleDelete(test._id)}>
                   <FiTrash2 />
                 </button>
               </td>
@@ -101,48 +136,25 @@ const LabManagement = () => {
         </tbody>
       </table>
 
-      {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
             <h2>{currentTest ? "Edit Test" : "Add New Test"}</h2>
             <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                name="testName"
-                placeholder="Test Name"
-                defaultValue={currentTest?.testName || ""}
-                required
-              />
-              <input
-                type="text"
-                name="patientName"
-                placeholder="Patient Name"
-                defaultValue={currentTest?.patientName || ""}
-                required
-              />
+              <input type="text" name="testName" placeholder="Test Name" defaultValue={currentTest?.testName || ""} required />
+              <input type="text" name="patientName" placeholder="Patient Name" defaultValue={currentTest?.patientName || ""} required />
               <input
                 type="date"
                 name="testDate"
-                placeholder="Test Date"
-                defaultValue={currentTest?.testDate || ""}
+                defaultValue={currentTest?.testDate ? new Date(currentTest.testDate).toISOString().split("T")[0] : ""}
                 required
               />
-              <select
-                name="status"
-                defaultValue={currentTest?.status || "Pending"}
-                required
-              >
+              <select name="status" defaultValue={currentTest?.status || "Pending"} required>
                 <option value="Pending">Pending</option>
                 <option value="Completed">Completed</option>
               </select>
               <div className="modal-actions">
-                <button type="button" onClick={() => {
-                  setIsModalOpen(false);
-                  setCurrentTest(null);
-                }}>
-                  Cancel
-                </button>
+                <button type="button" onClick={() => { setIsModalOpen(false); setCurrentTest(null); }}>Cancel</button>
                 <button type="submit">Save</button>
               </div>
             </form>

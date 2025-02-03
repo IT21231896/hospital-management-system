@@ -1,50 +1,85 @@
-// frontend/src/pages/WardManagement.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiSearch, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import Swal from "sweetalert2";
+import axios from "axios";
 import "../styles/ManagementStyles.css";
 
 const WardManagement = () => {
-  const [wards, setWards] = useState([
-    { id: 1, name: "ICU", totalBeds: 10, occupiedBeds: 5, type: "Critical Care" },
-    { id: 2, name: "General", totalBeds: 20, occupiedBeds: 8, type: "General Ward" }
-  ]);
+  const [wards, setWards] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentWard, setCurrentWard] = useState(null);
 
-  // CRUD Operations
-  const handleDelete = (id) => {
-    setWards(wards.filter(ward => ward.id !== id));
+  useEffect(() => {
+    fetchWards();
+  }, []);
+
+  const fetchWards = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/wards");
+      setWards(response.data);
+    } catch (error) {
+      console.error("Error fetching wards:", error);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleDelete = async (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`http://localhost:5000/api/wards/${id}`);
+          setWards(wards.filter((ward) => ward._id !== id));
+          Swal.fire("Deleted!", "The ward has been deleted.", "success");
+        } catch (error) {
+          console.error("Error deleting ward:", error);
+          Swal.fire("Error!", "Failed to delete ward.", "error");
+        }
+      }
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newWard = {
-      id: currentWard ? currentWard.id : Date.now(),
       name: formData.get("name"),
       totalBeds: formData.get("totalBeds"),
       occupiedBeds: formData.get("occupiedBeds"),
-      type: formData.get("type")
+      type: formData.get("type"),
     };
 
-    if (currentWard) {
-      setWards(wards.map(w => w.id === currentWard.id ? newWard : w));
-    } else {
-      setWards([...wards, newWard]);
+    try {
+      if (currentWard) {
+        await axios.put(`http://localhost:5000/api/wards/${currentWard._id}`, newWard);
+        fetchWards();
+        Swal.fire("Updated!", "Ward details updated successfully.", "success");
+      } else {
+        await axios.post("http://localhost:5000/api/wards", newWard);
+        fetchWards();
+        Swal.fire("Added!", "New ward added successfully.", "success");
+      }
+      setIsModalOpen(false);
+      setCurrentWard(null);
+    } catch (error) {
+      console.error("Error saving ward:", error);
+      Swal.fire("Error!", "Failed to save ward details.", "error");
     }
-    setIsModalOpen(false);
-    setCurrentWard(null);
   };
 
-  // Filter wards based on search
-  const filteredWards = wards.filter(ward =>
+  const filteredWards = wards.filter((ward) =>
     ward.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="management-container">
-      {/* Header and Search */}
       <div className="management-header">
         <h1>Ward Management</h1>
         <div className="search-bar">
@@ -61,7 +96,6 @@ const WardManagement = () => {
         </button>
       </div>
 
-      {/* Ward Table */}
       <table className="management-table">
         <thead>
           <tr>
@@ -73,8 +107,8 @@ const WardManagement = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredWards.map(ward => (
-            <tr key={ward.id}>
+          {filteredWards.map((ward) => (
+            <tr key={ward._id}>
               <td>{ward.name}</td>
               <td>{ward.totalBeds}</td>
               <td>{ward.occupiedBeds}</td>
@@ -89,10 +123,7 @@ const WardManagement = () => {
                 >
                   <FiEdit />
                 </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(ward.id)}
-                >
+                <button className="delete-btn" onClick={() => handleDelete(ward._id)}>
                   <FiTrash2 />
                 </button>
               </td>
@@ -101,7 +132,6 @@ const WardManagement = () => {
         </tbody>
       </table>
 
-      {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
@@ -136,10 +166,13 @@ const WardManagement = () => {
                 required
               />
               <div className="modal-actions">
-                <button type="button" onClick={() => {
-                  setIsModalOpen(false);
-                  setCurrentWard(null);
-                }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setCurrentWard(null);
+                  }}
+                >
                   Cancel
                 </button>
                 <button type="submit">Save</button>

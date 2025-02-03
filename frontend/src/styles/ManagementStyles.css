@@ -218,3 +218,35 @@
     }
   }
   
+
+  /* Style for the status dropdown */
+.modal select[name="status"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  appearance: none; /* Removes default browser styles */
+  transition: 0.3s;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%23666' d='M5 8l5 5 5-5H5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 30px; /* Space for custom arrow */
+}
+
+/* When the select dropdown is focused */
+.modal select[name="status"]:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  outline: none;
+}
+
+/* Styling the dropdown options */
+.modal select[name="status"] option {
+  background: white;
+  font-size: 16px;
+  color: #333;
+}

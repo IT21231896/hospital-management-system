@@ -1,44 +1,86 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { FiSearch, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import Swal from "sweetalert2";
 import "../styles/ManagementStyles.css";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const InventoryManagement = () => {
-  const [inventory, setInventory] = useState([
-    { id: 1, name: "Paracetamol", quantity: 100, supplier: "MediCorp", expiryDate: "2024-12-31" },
-    { id: 2, name: "Bandages", quantity: 50, supplier: "HealthPlus", expiryDate: "2025-06-30" }
-  ]);
+  const [inventory, setInventory] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
 
-  // CRUD Operations
-  const handleDelete = (id) => {
-    setInventory(inventory.filter(item => item.id !== id));
+  useEffect(() => {
+    fetchInventory();
+  }, []);
+
+  // Fetch inventory from API
+  const fetchInventory = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/inventory`);
+      setInventory(response.data);
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+    }
   };
 
-  const handleSubmit = (e) => {
+  // Handle delete with SweetAlert
+  const handleDelete = async (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This item will be permanently deleted!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`${API_BASE_URL}/inventory/${id}`);
+          setInventory(inventory.filter((item) => item._id !== id));
+          Swal.fire("Deleted!", "Item has been deleted.", "success");
+        } catch (error) {
+          Swal.fire("Error!", "Failed to delete the item.", "error");
+        }
+      }
+    });
+  };
+
+  // Handle form submit (add/edit item)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newItem = {
-      id: currentItem ? currentItem.id : Date.now(),
       name: formData.get("name"),
       quantity: formData.get("quantity"),
       supplier: formData.get("supplier"),
-      expiryDate: formData.get("expiryDate")
+      expiryDate: formData.get("expiryDate"),
     };
 
-    if (currentItem) {
-      setInventory(inventory.map(i => i.id === currentItem.id ? newItem : i));
-    } else {
-      setInventory([...inventory, newItem]);
+    try {
+      if (currentItem) {
+        // Update existing item
+        await axios.put(`${API_BASE_URL}/inventory/${currentItem._id}`, newItem);
+        setInventory(inventory.map((item) => (item.id === currentItem._id ? newItem : item)));
+        Swal.fire("Updated!", "Inventory item has been updated.", "success");
+      } else {
+        // Add new item
+        const response = await axios.post(`${API_BASE_URL}/inventory`, newItem);
+        setInventory([...inventory, response.data]);
+        Swal.fire("Added!", "New item has been added.", "success");
+      }
+      setIsModalOpen(false);
+      setCurrentItem(null);
+    } catch (error) {
+      Swal.fire("Error!", "Failed to save the item.", "error");
     }
-    setIsModalOpen(false);
-    setCurrentItem(null);
+    await fetchInventory();
   };
 
-  // Filter inventory based on search
-  const filteredInventory = inventory.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter inventory based on search term
+  const filteredInventory = inventory.filter(
+    (item) => item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -72,12 +114,12 @@ const InventoryManagement = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredInventory.map(item => (
-            <tr key={item.id}>
+          {filteredInventory.map((item) => (
+            <tr key={item._id}>
               <td>{item.name}</td>
               <td>{item.quantity}</td>
               <td>{item.supplier}</td>
-              <td>{item.expiryDate}</td>
+              <td>{new Date(item.expiryDate).toLocaleDateString("en-CA")}</td>
               <td>
                 <button
                   className="edit-btn"
@@ -90,7 +132,7 @@ const InventoryManagement = () => {
                 </button>
                 <button
                   className="delete-btn"
-                  onClick={() => handleDelete(item.id)}
+                  onClick={() => handleDelete(item._id)}
                 >
                   <FiTrash2 />
                 </button>
@@ -131,14 +173,17 @@ const InventoryManagement = () => {
                 type="date"
                 name="expiryDate"
                 placeholder="Expiry Date"
-                defaultValue={currentItem?.expiryDate || ""}
+                defaultValue={currentItem?.expiryDate ? new Date(currentItem.expiryDate).toISOString().split("T")[0] : ""}
                 required
               />
               <div className="modal-actions">
-                <button type="button" onClick={() => {
-                  setIsModalOpen(false);
-                  setCurrentItem(null);
-                }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setCurrentItem(null);
+                  }}
+                >
                   Cancel
                 </button>
                 <button type="submit">Save</button>
