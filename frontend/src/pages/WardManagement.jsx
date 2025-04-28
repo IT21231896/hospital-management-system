@@ -4,25 +4,33 @@ import Swal from "sweetalert2";
 import axios from "axios";
 import "../styles/ManagementStyles.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const WardManagement = () => {
   const [wards, setWards] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentWard, setCurrentWard] = useState(null);
 
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+
   useEffect(() => {
     fetchWards();
   }, []);
 
+  // Fetch wards
   const fetchWards = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/wards");
+      const response = await axios.get(`${API_BASE_URL}/wards`, authHeader);
       setWards(response.data);
     } catch (error) {
       console.error("Error fetching wards:", error);
     }
   };
 
+  // Handle delete
   const handleDelete = async (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -35,7 +43,7 @@ const WardManagement = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.delete(`http://localhost:5000/api/wards/${id}`);
+          await axios.delete(`${API_BASE_URL}/wards/${id}`, authHeader);
           setWards(wards.filter((ward) => ward._id !== id));
           Swal.fire("Deleted!", "The ward has been deleted.", "success");
         } catch (error) {
@@ -46,6 +54,7 @@ const WardManagement = () => {
     });
   };
 
+  // Handle add/edit submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -58,16 +67,15 @@ const WardManagement = () => {
 
     try {
       if (currentWard) {
-        await axios.put(`http://localhost:5000/api/wards/${currentWard._id}`, newWard);
-        fetchWards();
+        await axios.put(`${API_BASE_URL}/wards/${currentWard._id}`, newWard, authHeader);
         Swal.fire("Updated!", "Ward details updated successfully.", "success");
       } else {
-        await axios.post("http://localhost:5000/api/wards", newWard);
-        fetchWards();
+        await axios.post(`${API_BASE_URL}/wards`, newWard, authHeader);
         Swal.fire("Added!", "New ward added successfully.", "success");
       }
       setIsModalOpen(false);
       setCurrentWard(null);
+      await fetchWards(); // Refresh after save
     } catch (error) {
       console.error("Error saving ward:", error);
       Swal.fire("Error!", "Failed to save ward details.", "error");
@@ -91,7 +99,10 @@ const WardManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="add-btn" onClick={() => setIsModalOpen(true)}>
+        <button className="add-btn" onClick={() => {
+          setCurrentWard(null);
+          setIsModalOpen(true);
+        }}>
           <FiPlus /> Add Ward
         </button>
       </div>
@@ -123,7 +134,10 @@ const WardManagement = () => {
                 >
                   <FiEdit />
                 </button>
-                <button className="delete-btn" onClick={() => handleDelete(ward._id)}>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDelete(ward._id)}
+                >
                   <FiTrash2 />
                 </button>
               </td>
@@ -132,6 +146,7 @@ const WardManagement = () => {
         </tbody>
       </table>
 
+      {/* Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">

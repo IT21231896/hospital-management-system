@@ -6,11 +6,13 @@ const {
   deletePatient,
 } = require("../controllers/patientController");
 
+const authMiddleware = require("../middleware/authMiddleware");
+
 const router = express.Router();
 
-router.post("/", addPatient);
-router.get("/", getPatients);
-router.put("/:id", updatePatient);
-router.delete("/:id", deletePatient);
+router.post("/",authMiddleware, addPatient);
+router.get("/",authMiddleware, getPatients);
+router.put("/:id",authMiddleware, updatePatient);
+router.delete("/:id",authMiddleware, deletePatient);
 
 module.exports = router;

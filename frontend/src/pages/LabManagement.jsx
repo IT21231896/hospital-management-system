@@ -3,6 +3,7 @@ import axios from "axios";
 import { FiSearch, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
 import "../styles/ManagementStyles.css";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const LabManagement = () => {
@@ -11,14 +12,18 @@ const LabManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTest, setCurrentTest] = useState(null);
 
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+
   useEffect(() => {
     fetchLabTests();
   }, []);
 
-  // Fetch lab tests from API
+  // Fetch lab tests
   const fetchLabTests = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/lab`);
+      const response = await axios.get(`${API_BASE_URL}/lab`, authHeader);
       setLabTests(response.data);
     } catch (error) {
       console.error("Error fetching lab tests:", error);
@@ -37,7 +42,7 @@ const LabManagement = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.delete(`${API_BASE_URL}/lab/${id}`);
+          await axios.delete(`${API_BASE_URL}/lab/${id}`, authHeader);
           setLabTests(labTests.filter((test) => test._id !== id));
           Swal.fire("Deleted!", "Lab test has been deleted.", "success");
         } catch (error) {
@@ -47,7 +52,7 @@ const LabManagement = () => {
     });
   };
 
-  // Handle submit (add/edit test)
+  // Handle Add/Edit submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -60,22 +65,25 @@ const LabManagement = () => {
 
     try {
       if (currentTest) {
-        await axios.put(`${API_BASE_URL}/lab/${currentTest._id}`, newTest);
-        setLabTests(labTests.map((t) => (t.id === currentTest._id ? newTest : t)));
-        await fetchLabTests(); 
+        // Update existing test
+        const response = await axios.put(`${API_BASE_URL}/lab/${currentTest._id}`, newTest, authHeader);
+        setLabTests(labTests.map((t) => t._id === currentTest._id ? response.data : t));
         Swal.fire("Updated!", "Lab test has been updated.", "success");
       } else {
-        const response = await axios.post(`${API_BASE_URL}/lab`, newTest);
+        // Add new test
+        const response = await axios.post(`${API_BASE_URL}/lab`, newTest, authHeader);
         setLabTests([...labTests, response.data]);
         Swal.fire("Added!", "New lab test has been added.", "success");
       }
       setIsModalOpen(false);
       setCurrentTest(null);
+      await fetchLabTests();
     } catch (error) {
       Swal.fire("Error!", "Failed to save lab test.", "error");
     }
   };
 
+  // Filter lab tests
   const filteredLabTests = labTests.filter(
     (test) =>
       test.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,7 +103,10 @@ const LabManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="add-btn" onClick={() => setIsModalOpen(true)}>
+        <button className="add-btn" onClick={() => {
+          setCurrentTest(null);
+          setIsModalOpen(true);
+        }}>
           <FiPlus /> Add Test
         </button>
       </div>
@@ -127,7 +138,10 @@ const LabManagement = () => {
                 >
                   <FiEdit />
                 </button>
-                <button className="delete-btn" onClick={() => handleDelete(test._id)}>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDelete(test._id)}
+                >
                   <FiTrash2 />
                 </button>
               </td>
@@ -136,6 +150,7 @@ const LabManagement = () => {
         </tbody>
       </table>
 
+      {/* Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
@@ -154,7 +169,10 @@ const LabManagement = () => {
                 <option value="Completed">Completed</option>
               </select>
               <div className="modal-actions">
-                <button type="button" onClick={() => { setIsModalOpen(false); setCurrentTest(null); }}>Cancel</button>
+                <button type="button" onClick={() => {
+                  setIsModalOpen(false);
+                  setCurrentTest(null);
+                }}>Cancel</button>
                 <button type="submit">Save</button>
               </div>
             </form>

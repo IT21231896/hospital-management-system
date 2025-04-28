@@ -4,7 +4,7 @@ import { FiSearch, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
 import "../styles/ManagementStyles.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Replace with actual API URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const PatientManagement = () => {
   const [patients, setPatients] = useState([]);
@@ -12,12 +12,25 @@ const PatientManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPatient, setCurrentPatient] = useState(null);
 
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/patients`)
-      .then(response => setPatients(response.data))
-      .catch(error => console.error("Error fetching patients:", error));
+    fetchPatients();
   }, []);
 
+  // Fetch patients
+  const fetchPatients = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/patients`, authHeader);
+      setPatients(response.data);
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+    }
+  };
+
+  // Handle delete
   const handleDelete = (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -29,7 +42,7 @@ const PatientManagement = () => {
       confirmButtonText: "Yes, delete it!"
     }).then((result) => {
       if (result.isConfirmed) {
-        axios.delete(`${API_BASE_URL}/patients/${id}`)
+        axios.delete(`${API_BASE_URL}/patients/${id}`, authHeader)
           .then(() => {
             setPatients(patients.filter(patient => patient._id !== id));
             Swal.fire("Deleted!", "Patient record has been removed.", "success");
@@ -41,7 +54,8 @@ const PatientManagement = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  // Handle add/edit submit
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newPatient = {
@@ -51,24 +65,24 @@ const PatientManagement = () => {
       diagnosis: formData.get("diagnosis"),
     };
 
-    if (currentPatient) {
-      axios.put(`${API_BASE_URL}/patients/${currentPatient._id}`, newPatient)
-        .then(response => {
-          setPatients(patients.map(p => (p._id === currentPatient._id ? response.data : p)));
-          Swal.fire("Updated!", "Patient details have been updated.", "success");
-        })
-        .catch(() => Swal.fire("Error!", "Failed to update patient.", "error"));
-    } else {
-      axios.post(`${API_BASE_URL}/patients`, newPatient)
-        .then(response => {
-          setPatients([...patients, response.data]);
-          Swal.fire("Added!", "New patient has been added.", "success");
-        })
-        .catch(() => Swal.fire("Error!", "Failed to add patient.", "error"));
+    try {
+      if (currentPatient) {
+        // Update existing patient
+        const response = await axios.put(`${API_BASE_URL}/patients/${currentPatient._id}`, newPatient, authHeader);
+        setPatients(patients.map(p => (p._id === currentPatient._id ? response.data : p)));
+        Swal.fire("Updated!", "Patient details have been updated.", "success");
+      } else {
+        // Add new patient
+        const response = await axios.post(`${API_BASE_URL}/patients`, newPatient, authHeader);
+        setPatients([...patients, response.data]);
+        Swal.fire("Added!", "New patient has been added.", "success");
+      }
+      setIsModalOpen(false);
+      setCurrentPatient(null);
+      await fetchPatients(); // Refresh after submit
+    } catch (error) {
+      Swal.fire("Error!", "Failed to save patient.", "error");
     }
-
-    setIsModalOpen(false);
-    setCurrentPatient(null);
   };
 
   return (
@@ -84,7 +98,10 @@ const PatientManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="add-btn" onClick={() => setIsModalOpen(true)}>
+        <button className="add-btn" onClick={() => {
+          setCurrentPatient(null);
+          setIsModalOpen(true);
+        }}>
           <FiPlus /> Add Patient
         </button>
       </div>
@@ -100,28 +117,37 @@ const PatientManagement = () => {
           </tr>
         </thead>
         <tbody>
-          {patients.filter(patient => patient.name.toLowerCase().includes(searchTerm.toLowerCase())).map(patient => (
-            <tr key={patient._id}>
-              <td>{patient.name}</td>
-              <td>{patient.age}</td>
-              <td>{patient.contact}</td>
-              <td>{patient.diagnosis}</td>
-              <td>
-                <button className="edit-btn" onClick={() => {
-                  setCurrentPatient(patient);
-                  setIsModalOpen(true);
-                }}>
-                  <FiEdit />
-                </button>
-                <button className="delete-btn" onClick={() => handleDelete(patient._id)}>
-                  <FiTrash2 />
-                </button>
-              </td>
-            </tr>
-          ))}
+          {patients
+            .filter(patient => patient.name.toLowerCase().includes(searchTerm.toLowerCase()))
+            .map(patient => (
+              <tr key={patient._id}>
+                <td>{patient.name}</td>
+                <td>{patient.age}</td>
+                <td>{patient.contact}</td>
+                <td>{patient.diagnosis}</td>
+                <td>
+                  <button
+                    className="edit-btn"
+                    onClick={() => {
+                      setCurrentPatient(patient);
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    <FiEdit />
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDelete(patient._id)}
+                  >
+                    <FiTrash2 />
+                  </button>
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
 
+      {/* Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">

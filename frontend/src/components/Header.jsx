@@ -8,7 +8,7 @@ const Header = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Perform logout actions (e.g., clear session, redirect to login)
+    localStorage.removeItem("token"); // important for logout
     navigate("/login");
   };
 

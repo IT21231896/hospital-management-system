@@ -6,11 +6,13 @@ const {
   deleteInventory,
 } = require("../controllers/inventoryController");
 
+const authMiddleware = require("../middleware/authMiddleware");
+
 const router = express.Router();
 
-router.post("/", addInventory);
-router.get("/", getInventory);
-router.put("/:id", updateInventory);
-router.delete("/:id", deleteInventory);
+router.post("/", authMiddleware, addInventory);
+router.get("/", authMiddleware, getInventory);
+router.put("/:id",authMiddleware, updateInventory);
+router.delete("/:id",authMiddleware, deleteInventory);
 
 module.exports = router;

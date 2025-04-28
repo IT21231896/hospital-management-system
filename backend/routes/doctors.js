@@ -6,11 +6,13 @@ const {
   deleteDoctor,
 } = require("../controllers/doctorController");
 
+const authMiddleware = require("../middleware/authMiddleware");
+
 const router = express.Router();
 
-router.post("/", addDoctor);
-router.get("/", getDoctors);
-router.put("/:id", updateDoctor);
-router.delete("/:id", deleteDoctor);
+router.post("/",authMiddleware, addDoctor);
+router.get("/",authMiddleware, getDoctors);
+router.put("/:id",authMiddleware, updateDoctor);
+router.delete("/:id",authMiddleware, deleteDoctor);
 
 module.exports = router;

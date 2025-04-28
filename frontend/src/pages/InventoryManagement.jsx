@@ -3,6 +3,7 @@ import axios from "axios";
 import { FiSearch, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
 import "../styles/ManagementStyles.css";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const InventoryManagement = () => {
@@ -11,21 +12,25 @@ const InventoryManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
 
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+
   useEffect(() => {
     fetchInventory();
   }, []);
 
-  // Fetch inventory from API
+  // Fetch inventory
   const fetchInventory = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/inventory`);
+      const response = await axios.get(`${API_BASE_URL}/inventory`, authHeader);
       setInventory(response.data);
     } catch (error) {
       console.error("Error fetching inventory:", error);
     }
   };
 
-  // Handle delete with SweetAlert
+  // Handle delete
   const handleDelete = async (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -37,7 +42,7 @@ const InventoryManagement = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.delete(`${API_BASE_URL}/inventory/${id}`);
+          await axios.delete(`${API_BASE_URL}/inventory/${id}`, authHeader);
           setInventory(inventory.filter((item) => item._id !== id));
           Swal.fire("Deleted!", "Item has been deleted.", "success");
         } catch (error) {
@@ -47,7 +52,7 @@ const InventoryManagement = () => {
     });
   };
 
-  // Handle form submit (add/edit item)
+  // Handle Add/Edit submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -61,24 +66,24 @@ const InventoryManagement = () => {
     try {
       if (currentItem) {
         // Update existing item
-        await axios.put(`${API_BASE_URL}/inventory/${currentItem._id}`, newItem);
-        setInventory(inventory.map((item) => (item.id === currentItem._id ? newItem : item)));
+        const response = await axios.put(`${API_BASE_URL}/inventory/${currentItem._id}`, newItem, authHeader);
+        setInventory(inventory.map((item) => item._id === currentItem._id ? response.data : item));
         Swal.fire("Updated!", "Inventory item has been updated.", "success");
       } else {
         // Add new item
-        const response = await axios.post(`${API_BASE_URL}/inventory`, newItem);
+        const response = await axios.post(`${API_BASE_URL}/inventory`, newItem, authHeader);
         setInventory([...inventory, response.data]);
         Swal.fire("Added!", "New item has been added.", "success");
       }
       setIsModalOpen(false);
       setCurrentItem(null);
+      await fetchInventory();
     } catch (error) {
       Swal.fire("Error!", "Failed to save the item.", "error");
     }
-    await fetchInventory();
   };
 
-  // Filter inventory based on search term
+  // Filter inventory
   const filteredInventory = inventory.filter(
     (item) => item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -97,7 +102,10 @@ const InventoryManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="add-btn" onClick={() => setIsModalOpen(true)}>
+        <button className="add-btn" onClick={() => {
+          setCurrentItem(null);
+          setIsModalOpen(true);
+        }}>
           <FiPlus /> Add Item
         </button>
       </div>
@@ -142,7 +150,7 @@ const InventoryManagement = () => {
         </tbody>
       </table>
 
-      {/* Add/Edit Modal */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
