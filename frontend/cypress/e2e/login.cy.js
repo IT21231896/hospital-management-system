@@ -1,10 +1,5 @@
 describe('Login Page Tests', function () {
-  
-  // Clear cookies and local storage before each test to avoid session persistence issues
-  beforeEach(() => {
-    cy.clearCookies();         // Clear all cookies
-    cy.clearLocalStorage();    // Clear local storage
-  });
+
 
   // Test Case 1: Successful login with valid credentials
   it('should log in with valid credentials', function () {
