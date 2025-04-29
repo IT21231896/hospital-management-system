@@ -29,6 +29,7 @@ const Login = () => {
     }
   };
 
+  
   // If already logged in, redirect to dashboard
   if (localStorage.getItem("token")) {
     navigate("/dashboard");
@@ -37,7 +38,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <h2>AK Healthcare - Login</h2>
-      {error && <p className="auth-error">{error}</p>}
+      {error && <p className="auth-error">Login failed!</p>}
       <form onSubmit={handleSubmit}>
         <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
         <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
