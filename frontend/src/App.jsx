@@ -32,7 +32,7 @@ const App = () => {
         <Route
           path="/*"
           element={
-            <PrivateRoute>
+          
               <>
                 <Header />
                 <Routes>
@@ -44,7 +44,7 @@ const App = () => {
                   <Route path="/lab-management" element={<LabManagement />} />
                 </Routes>
               </>
-            </PrivateRoute>
+            
           }
         />
       </Routes>
